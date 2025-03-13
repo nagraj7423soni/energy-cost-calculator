@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Cost Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        input, button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+        canvas {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Energy Cost Calculator</h2>
+        <label for="kwh">Enter kWh Energy:</label>
+        <input type="number" id="kwh" placeholder="Enter kWh" required>
+        <br>
+        <h3>Enter Price for Each Time Slot (₹):</h3>
+        <div id="priceInputs"></div>
+        <button onclick="calculateCost()">Calculate</button>
+        <h3 id="result"></h3>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Time Slot</th>
+                <th>Energy (kWh)</th>
+                <th>Price (₹)</th>
+                <th>Total Cost (₹)</th>
+            </tr>
+        </thead>
+        <tbody id="costTable"></tbody>
+    </table>
+    
+    <canvas id="barChart" width="400" height="200"></canvas>
+    
+    <h3>Best Slot Ranking</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Time Slot</th>
+                <th>Total Cost (₹)</th>
+            </tr>
+        </thead>
+        <tbody id="rankTable"></tbody>
+    </table>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            let priceInputs = document.getElementById("priceInputs");
+            let timeSlots = ["6-9", "9-12", "12-15", "15-18", "18-21", "21-24", "24-3", "3-6"];
+            timeSlots.forEach((slot, index) => {
+                let label = document.createElement("label");
+                label.innerHTML = `${slot}: `;
+                let input = document.createElement("input");
+                input.type = "number";
+                input.id = `price${index}`;
+                input.placeholder = "₹";
+                input.required = true;
+                priceInputs.appendChild(label);
+                priceInputs.appendChild(input);
+                priceInputs.appendChild(document.createElement("br"));
+            });
+        });
+
+        function calculateCost() {
+            let kwh = parseFloat(document.getElementById("kwh").value) || 0;
+            let timeSlots = ["6-9", "9-12", "12-15", "15-18", "18-21", "21-24", "24-3", "3-6"];
+            let energyData = [];
+            let costData = [];
+            let costTable = document.getElementById("costTable");
+            let rankTable = document.getElementById("rankTable");
+            costTable.innerHTML = "";
+            rankTable.innerHTML = "";
+            
+            let slotCosts = [];
+
+            timeSlots.forEach((slot, index) => {
+                let slotPrice = parseFloat(document.getElementById(`price${index}`).value) || 0;
+                let randomEnergy = Math.floor(kwh - 100 + Math.random() * 200);
+                let totalCost = randomEnergy * slotPrice;
+                energyData.push(randomEnergy);
+                costData.push(totalCost);
+                slotCosts.push({ slot, totalCost });
+                
+                let row = `<tr><td>${slot}</td><td>${randomEnergy}</td><td>₹${slotPrice}</td><td>₹${totalCost.toFixed(2)}</td></tr>`;
+                costTable.innerHTML += row;
+            });
+            
+            document.getElementById("result").innerHTML = "Total Cost: ₹" + costData.reduce((a, b) => a + b, 0).toFixed(2);
+            
+            slotCosts.sort((a, b) => a.totalCost - b.totalCost);
+            slotCosts.forEach((slot, index) => {
+                let row = `<tr><td>${index + 1}</td><td>${slot.slot}</td><td>₹${slot.totalCost.toFixed(2)}</td></tr>`;
+                rankTable.innerHTML += row;
+            });
+            
+            let ctx = document.getElementById("barChart").getContext("2d");
+            if (window.barChartInstance) {
+                window.barChartInstance.destroy();
+            }
+            window.barChartInstance = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: timeSlots,
+                    datasets: [
+                        {
+                            label: "Energy (kWh)",
+                            data: energyData,
+                            backgroundColor: "blue"
+                        },
+                        {
+                            label: "Cost (₹)",
+                            data: costData,
+                            backgroundColor: "orange"
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
